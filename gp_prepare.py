@@ -43,19 +43,27 @@ def walk_dir(root_d):
         ff = os.path.join(root_d, f) 
         
         if os.path.isdir(ff):
-            if re.match('^\d{4}-\d{2}-\d{2}$', f):
+            if re.match('^\d{4}-\d{2}-\d{2}.*$', f):
                 date_dir_process(root_d, f)
             else:
                 album_dir_process(root_d, f)
 
 def album_dir_process(root_d, d):
-    print('--- Process album dir {}'.format(os.path.join(root_d, d)))
+    this_d = os.path.join(root_d, d)
+    print('--- Process album dir {}'.format(this_d))
 
     try:
+        # see if it's empty
+        path, dirs, files = next(os.walk(this_d))
+        files.remove('metadata.json')
+        if len(files) == 0:
+            log('Removing empty directory {}'.format(this_d))
+            return
+
         # Rename directory based on metadata.json
         with open(os.path.join(root_d, d, 'metadata.json')) as f:
             md = json.load(f)
-            name = md['albumData']['title']
+            name = md['albumData']['title'].encode('utf-8')
             f.close()
     
         old_d = os.path.join(root_d, d)
@@ -63,6 +71,8 @@ def album_dir_process(root_d, d):
         if d != name:
             if not DEBUG:
                 os.rename(old_d, new_d)
+            else:
+                new_d = old_d # hack
             log('Renaming _Album dir_ {} to {}'.format(old_d, new_d))
 
         # Delete metadata.json
