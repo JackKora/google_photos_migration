@@ -2,7 +2,7 @@
 
 import os, sys, datetime, json, subprocess
 
-DEBUG = True
+DRYRUN = True
 JSON = '.json'
 EXIFTOOL = 'exiftool'
 
@@ -27,6 +27,10 @@ def walk_dir(root_d):
             walk_dir(ff)
 
 def update_exif(f, timestamp):
+    if DRYRUN:
+        info('Dry run: would be setting EXIF DateTimeOriginal in {} to {}'.format(f, timestamp))
+        return
+
     devnull = open(os.devnull, 'wb')
     run = '{} -overwrite_original "-DateTimeOriginal={}" "{}"'.format(EXIFTOOL, timestamp, f)
     res = subprocess.call(run, shell=True, stdout=devnull, stderr=devnull)
@@ -88,11 +92,13 @@ def init():
     devnull = open(os.devnull, 'wb')
     if len(sys.argv) not in [2, 3] or subprocess.call('ls ' + os.path.join(sys.argv[1], '*.jpg'), shell=True, stdout=devnull, stderr=devnull) != 0:
         print('Wrong arguments!')
+        print('- first arg: directory with images')
+        print('- second arg: optional -e to execute the changes (the default is a dry run)')
         sys.exit(1)
 
-    if len(sys.argv) == 3 and sys.argv[2] == '--e':
-        global DEBUG
-        DEBUG = False
+    if len(sys.argv) == 3 and sys.argv[2] == '-e':
+        global DRYRUN
+        DRYRUN = False
 
     if os.environ.get('EXIFTOOL'):
         global EXIFTOOL
