@@ -17,6 +17,7 @@ Everything here takes a long time to run if you're dealing with gigabytes of pho
 - When you run scripts redirect all output `> output.log` so you can later look at what may have failed.
 - Every output line starts with either `I | ` or `W | ` or `E | ` (for info, warning, error respectively) so you can tell exactly what happened.
 - Both Python scripts run in _dry run_ mode by default where they don't do any permanent operations. Use `-e` as the second/last argument to execute your changes.
+- All files that aren't in any album are moved to the `_NO_ALBUM_` directory.
 
 # How it works
 

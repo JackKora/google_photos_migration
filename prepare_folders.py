@@ -3,10 +3,11 @@
 import os, sys, subprocess, re, json, traceback, shutil
 
 DRYRUN = True
-NO_ALBUM_DIR = '_NO_ALBUMS'
-# TODO: does not support date dirs like "yyyy-mm-dd - yyyy-mm-dd"
-DATE_NAME_REGEX = '^(\d{1,4}-)+\d{1,4}( #2)?(\.[A-Za-z]{3,4})?$'
+NO_ALBUM_DIR = '_NO_ALBUM_'
 METADATA = 'metadata.json'
+NON_ALBUM_DATE_REGEX = '^(\d{1,4}-)+\d{1,4}( #2)?( - (\d{1,4}-)+\d{1,4})?(\.[A-Za-z]{3,4})?$'
+ALBUM_NAME_REPLACEMENT = {'\xe2\x97\x8f': 'and',
+                          ':': '-'}
 
 def main():
     init()
@@ -35,10 +36,10 @@ def move_files(parent_d):
         ff = os.path.join(parent_d, f)
 
         if os.path.isfile(ff):
-            if re.match(DATE_NAME_REGEX, f):
-                file_move(parent_d, f, 'date')
-            else:
+            if is_album(f):
                 file_move(parent_d, f, 'album')
+            else:
+                file_move(parent_d, f, 'non-album')
 
 def massage_folders(parent_d):
     # now go over all dirs and rename/move them
@@ -52,10 +53,10 @@ def massage_folders(parent_d):
             if remove_empty_dir(dd):
                 continue # we just deleted it
 
-            if re.match(DATE_NAME_REGEX, d):
-                process_date_dir(parent_d, d)
-            else:
+            if is_album(d):
                 process_album_dir(parent_d, d)
+            else:
+                process_nonalbum_dir(parent_d, d)
 
 def process_album_dir(parent_d, d):
     this_d = os.path.join(parent_d, d)
@@ -68,6 +69,11 @@ def process_album_dir(parent_d, d):
 
     # Remove parens from all files just in case
     clean_filenames(new_d)
+
+def clean_album_name(name):
+    for k in ALBUM_NAME_REPLACEMENT.keys():
+        name = name.replace(k, ALBUM_NAME_REPLACEMENT[k])
+    return name
 
 def clean_filenames(parent_d):
     """
@@ -82,10 +88,10 @@ def clean_filenames(parent_d):
             else:
                 rename(old_f, new_f, 'cleaned file')
 
-def process_date_dir(parent_d, d):
+def process_nonalbum_dir(parent_d, d):
     old_dir = os.path.join(parent_d, d)
     new_dir = os.path.join(parent_d, NO_ALBUM_DIR)
-    info('--- Process date dir {}'.format(old_dir))
+    info('--- Process non-album dir {}'.format(old_dir))
 
     delete(os.path.join(old_dir, METADATA), 'useless') # delete metadata.json
 
@@ -93,9 +99,9 @@ def process_date_dir(parent_d, d):
     for f in os.listdir(old_dir):
         old_f = os.path.join(old_dir, f)
         new_f = os.path.join(new_dir, d + '-' + filename_filter(f))
-        rename(old_f, new_f, 'date file')
+        rename(old_f, new_f, 'non-album file')
 
-    delete(old_dir, 'date dir') # now remove dir itself
+    delete(old_dir, 'non-album dir') # now remove dir itself
 
 def rename_album_dir(parent_d, d):
     """
@@ -105,7 +111,7 @@ def rename_album_dir(parent_d, d):
     try:
         with open(mf) as f:
             md = json.load(f)
-            name = md['albumData']['title'].encode('utf-8')
+            name = clean_album_name(md['albumData']['title'].encode('utf-8'))
             # TODO: filter out unicode, ascii only
             f.close()
     except IOError as e:
@@ -114,6 +120,12 @@ def rename_album_dir(parent_d, d):
 
     return rename(os.path.join(parent_d, d), os.path.join(parent_d, name), 'album dir')
 
+def is_album(name):
+    if re.match(NON_ALBUM_DATE_REGEX, name):
+        return False
+    else:
+        return True
+
 def filename_filter(fn):
     return ''.join((filter(lambda x: x not in ['(', ')'], fn)))
 
@@ -121,7 +133,7 @@ def file_move(parent_d, f, type):
     old_f = os.path.join(parent_d, f)
     if type == 'album':
         new_f = os.path.join(parent_d, os.path.splitext(f)[-2], f) # assume dir name is same as file name w/o extension
-    elif type == 'date':
+    elif type == 'non-album':
         new_f = os.path.join(parent_d, NO_ALBUM_DIR, f)
     else:
         error('Unknown file type {}'.format(type))
