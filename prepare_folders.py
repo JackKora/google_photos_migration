@@ -4,6 +4,7 @@ import os, sys, subprocess, re, json, traceback, shutil
 
 DRYRUN = True
 NO_ALBUM_DIR = '_NO_ALBUMS'
+# TODO: does not support date dirs like "yyyy-mm-dd - yyyy-mm-dd"
 DATE_NAME_REGEX = '^(\d{1,4}-)+\d{1,4}( #2)?(\.[A-Za-z]{3,4})?$'
 METADATA = 'metadata.json'
 
@@ -119,7 +120,7 @@ def filename_filter(fn):
 def file_move(parent_d, f, type):
     old_f = os.path.join(parent_d, f)
     if type == 'album':
-        new_f = os.path.join(parent_d, os.path.splitext('.')[-2], f) # assume dir name is same as file name w/o extension
+        new_f = os.path.join(parent_d, os.path.splitext(f)[-2], f) # assume dir name is same as file name w/o extension
     elif type == 'date':
         new_f = os.path.join(parent_d, NO_ALBUM_DIR, f)
     else:
