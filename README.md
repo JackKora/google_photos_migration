@@ -23,24 +23,41 @@ Everything here takes a long time to run if you're dealing with gigabytes of pho
 
 ## Download your photos
 
-1. Use google Takeout
-1. Run `extract.sh`
+1. Do Google Takeout to download your photos.
+1. Unzip them all. Use `extract.sh` as a convenience script.
 
 ## Update EXIF date/time
 
-1. Copy the <image>.json metadata files for the failed images to save for later. Otherwise it will be deleted in the next step.
+Google Photos is designed to work around photos having EXIF date (`DateTimeOriginal` tag) set. Without it you get a pile of photos that's not quite manageable. If you ever set date/time on photos within Google Photos, beware that the EXIF was not updated. Instead your export contains metadata in _.json_ files.
 
-1. Do Google Takeout for all your Photos. It exports files in a weird directory and filename structure. For each album and image file there is `metadata.json` that has a bunch of info.
-1. Run `extract.sh` to unzip everything
-1. Extract everything.
-1. Set EXIF `DateTimeOriginal` timestamps so Google Photos can properly sort them. This step is needed if you previously set timestamps in Google Photos, which does not change the EXIF on the image and only stores the timestamp in metadata.
-1.
+Follow this section to set proper EXIF dates on your photos. Only _jpeg/jpg_ and _png_ are supported. Note that video formats aren't supported at all.
+
+1. Run `update_exif.py`. Sometimes an occasional update fails, likely due to corrupted EXIF headers.
+1. Save these _<image>.json_ metadata files for the failed image updates if you need that info for later. Otherwise it will be deleted in the next step.
+
+## Prepare folders for upload
+
+Another strange thing Google Photos do is a weird folder structure. You can see it for yourself. This step will do a few things:
+
+- Move all files into their proper album directories.
+- Rename album directories to their proper names based on _metadata.json_ info. And filter out an occasional non-ASCII character.
+- Move all files that aren't in albums into one directory called *\_NO_ALBUM\_*.
+- Remove parenthesis from filenames (why would you ever do that?!).
+
+Here's how:
+1. Run `prepare_folders.py` and redirect output.
+1. Look for `E ` in the output to double check for potential errors.
 
 ## Upload to Google Photos
 
-Use your favorite uploader. There are a few out there. I tried gp_photo_uploader - it sucked. PickBackMan is a commercial solution but it works better.
+Use your favorite uploader. There are a few out there:
+- I tried [gpphotos_uploader-cli](https://github.com/gphotosuploader/gphotos-uploader-cli) and it was good but had a few problems. It kept creating duplicate folders and I kept running into Google API rate limit, which is only 10,000 a day. It's not nearly enough to upload a large library.
+- [PickBackMan](https://www.picbackman.com/) is a commercial solution and not cheap either. But it works well (Mac and Windows only).
 
-# Open items
+# Contributions & bugs
 
-1. Filter unicode out of album names
-1. Video timestamp support is not implemented yet.
+You are welcome to contribute! If you see a bug, you can open an issue and I hope to get to it soon. Or create a pull request yourself :)
+
+# License
+
+Use of this source code is governed by an MIT-style license that can be found in the LICENSE file.
