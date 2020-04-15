@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import os, sys, subprocess, re, json, traceback
+import os, sys, subprocess, re, json, traceback, shutil
 
 DRYRUN = True
 NO_ALBUM_DIR = '_NO_ALBUMS'
@@ -21,8 +21,8 @@ def delete_media_metadata(parent_d):
     info('------ CLEAN UP MEDIA METADATA')
     for root, dirs, files in os.walk(parent_d):
         for f in files:
-            if os.path.splitext(f)[1].lower() == '.json':
-                delete(f, 'useless metadata')
+            if os.path.splitext(f)[-1].lower() == '.json' and f != METADATA:
+                delete(os.path.join(root, f), 'useless metadata')
 
 def move_files(parent_d):
     """
@@ -48,7 +48,8 @@ def massage_folders(parent_d):
         dd = os.path.join(parent_d, d)
 
         if os.path.isdir(dd):
-            remove_empty_dir(dd)
+            if remove_empty_dir(dd):
+                continue # we just deleted it
 
             if re.match(DATE_NAME_REGEX, d):
                 process_date_dir(parent_d, d)
@@ -106,7 +107,7 @@ def rename_album_dir(parent_d, d):
             name = md['albumData']['title'].encode('utf-8')
             # TODO: filter out unicode, ascii only
             f.close()
-    except OSError as e:
+    except IOError as e:
         error('Could not read from {}, skipping _album_ dir rename'.format(mf), e, sys.exc_info())
         return os.path.join(parent_d, d)
 
@@ -118,7 +119,7 @@ def filename_filter(fn):
 def file_move(parent_d, f, type):
     old_f = os.path.join(parent_d, f)
     if type == 'album':
-        new_f = os.path.join(parent_d, f.split('.')[0], f) # assume dir name is same as file name w/o extension
+        new_f = os.path.join(parent_d, os.path.splitext('.')[-2], f) # assume dir name is same as file name w/o extension
     elif type == 'date':
         new_f = os.path.join(parent_d, NO_ALBUM_DIR, f)
     else:
@@ -129,9 +130,11 @@ def file_move(parent_d, f, type):
 
 def remove_empty_dir(d):
     path, dirs, files = next(os.walk(d))
-    files.remove(METADATA) # if this is the only file, remove dir still
+    if METADATA in files:
+        files.remove(METADATA) # if this is the only file, remove dir still
     if len(files) == 0:
-        delete(d, 'empty dir')
+        return delete(d, 'empty dir')
+    return False
 
 def rename(old_f, new_f, msg):
     if old_f == new_f:
@@ -141,7 +144,7 @@ def rename(old_f, new_f, msg):
     else:
         try:
             os.rename(old_f, new_f)
-            log('Renamed [{}] {} to {}'.format(msg, old_f, new_f))
+            info('Renamed [{}] {} to {}'.format(msg, old_f, new_f))
             return new_f # it actually got renamed
 
         except OSError as e:
@@ -153,13 +156,15 @@ def delete(f, msg):
         info('Dry run: would be deleting [{}] {}'.format(msg, f))
     else:
         try:
-            if os.path.isdir():
-                os.rmdir(f)
+            if os.path.isdir(f):
+                shutil.rmtree(f)
             else:
                 os.remove(f)
             info('Deleted [{}] {}'.format(msg, f))
+            return True
         except OSError as e:
             error('Could not delete [{}] {}'.format(msg, f), e, sys.exc_info())
+    return False
 
 def init():
     # do a basic sanity check that the first arg is the right dir with JPEG files
@@ -191,7 +196,7 @@ def log(msg, level, exc=None, exc_info=None):
     if not exc:
         print('{} | {}'.format(level, msg))
     else:
-        print('{} [{}] | {}'.format(level, msg, exc))
+        print('{} | {} | {}'.format(level, msg, exc))
         print(traceback.format_exc(exc_info))
 
 if __name__ == "__main__":
