@@ -44,6 +44,8 @@ Another strange thing Google Photos do is a weird folder structure. You can see 
 - Move all files that aren't in albums into one directory called *\_NO_ALBUM\_*.
 - Remove parenthesis from filenames (why would you ever do that?!).
 
+The directory structure Google gives you keeps giving more and more surprises. Every time I run it on a new account, there's something new. So it is highly advised to examine the output for errors and see if there are any. Frequently you'll have a few weirdly named directories that you can manually rename (or delete, many of them are empty).
+
 Here's how:
 1. Run `prepare_folders.py` and redirect output.
 1. Look for `E ` in the output to double check for potential errors.
