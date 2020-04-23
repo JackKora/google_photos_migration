@@ -117,6 +117,9 @@ def rename_album_dir(parent_d, d):
             name = clean_album_name(md['albumData']['title'].encode('utf-8'))
             # TODO: filter out unicode, ascii only
             f.close()
+    except KeyError as e:
+        error('Metadata {} did not have the info, skipping _album_ dir rename'.format(mf), e, sys.exc_info())
+        return os.path.join(parent_d, d)
     except IOError as e:
         error('Could not read from {}, skipping _album_ dir rename'.format(mf), e, sys.exc_info())
         return os.path.join(parent_d, d)
