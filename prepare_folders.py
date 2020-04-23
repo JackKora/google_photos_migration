@@ -183,9 +183,7 @@ def delete(f, msg):
     return False
 
 def init():
-    # do a basic sanity check that the first arg is the right dir with JPEG files
-    devnull = open(os.devnull, 'wb')
-    if len(sys.argv) not in [2, 3] or subprocess.call('ls ' + os.path.join(sys.argv[1], '*.jpg'), shell=True, stdout=devnull, stderr=devnull) != 0:
+    if len(sys.argv) not in [2, 3]:
         print('Wrong arguments!')
         print('- first arg: directory with images')
         print('- second arg: optional -e to execute the changes (the default is a dry run)')
