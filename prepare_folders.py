@@ -6,6 +6,7 @@ DRYRUN = True
 NO_ALBUM_DIR = '_NO_ALBUM_'
 METADATA = 'metadata.json'
 NON_ALBUM_DATE_REGEX = '^(\d{1,4}-)+\d{1,4}( #2)?( - (\d{1,4}-)+\d{1,4})?(\.[A-Za-z]{3,4})?$'
+NON_ALBUM_HANGOUT_REGEX = '^Hangout_ .*'
 ALBUM_NAME_REPLACEMENT = {'\xe2\x97\x8f': 'and',
                           ':': '-'}
 
@@ -70,9 +71,11 @@ def process_album_dir(parent_d, d):
     # Remove parens from all files just in case
     clean_filenames(new_d)
 
-def clean_album_name(name):
+def clean_album_name(name, spaces=False):
     for k in ALBUM_NAME_REPLACEMENT.keys():
         name = name.replace(k, ALBUM_NAME_REPLACEMENT[k])
+    if spaces:
+        name = name.replace(' ', '')
     return name
 
 def clean_filenames(parent_d):
@@ -98,7 +101,7 @@ def process_nonalbum_dir(parent_d, d):
     # move all files to NO_ALBUM_DIR
     for f in os.listdir(old_dir):
         old_f = os.path.join(old_dir, f)
-        new_f = os.path.join(new_dir, d + '-' + filename_filter(f))
+        new_f = os.path.join(new_dir, clean_album_name(d, True) + '-' + filename_filter(f))
         rename(old_f, new_f, 'non-album file')
 
     delete(old_dir, 'non-album dir') # now remove dir itself
@@ -121,7 +124,7 @@ def rename_album_dir(parent_d, d):
     return rename(os.path.join(parent_d, d), os.path.join(parent_d, name), 'album dir')
 
 def is_album(name):
-    if re.match(NON_ALBUM_DATE_REGEX, name):
+    if re.match(NON_ALBUM_DATE_REGEX, name) or re.match(NON_ALBUM_HANGOUT_REGEX, name):
         return False
     else:
         return True
