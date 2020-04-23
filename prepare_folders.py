@@ -5,7 +5,7 @@ import os, sys, subprocess, re, json, traceback, shutil
 DRYRUN = True
 NO_ALBUM_DIR = '_NO_ALBUM_'
 METADATA = 'metadata.json'
-NON_ALBUM_DATE_REGEX = '^(\d{1,4}-)+\d{1,4}( #2)?( - (\d{1,4}-)+\d{1,4})?(\.[A-Za-z]{3,4})?$'
+NON_ALBUM_DATE_REGEX = '^(\d{1,4}-)+\d{1,4}( #\d)?( - (\d{1,4}-)+\d{1,4})?(\.[A-Za-z]{3,4})?$'
 NON_ALBUM_HANGOUT_REGEX = '^Hangout_ .*'
 ALBUM_NAME_REPLACEMENT = {'\xe2\x97\x8f': 'and',
                           ':': '-'}
